@@ -8,4 +8,5 @@ public sealed record SyncUser(
     bool Calendar = true,
     bool Contacts = true,
     bool Tasks = true,
-    bool EmailJournal = false);
+    bool EmailJournal = false,
+    SyncDirection? Direction = null); // null = inherit the global Sync:Direction setting

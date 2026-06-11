@@ -111,11 +111,12 @@ static int RunUsers(string[] args, IStateStore state)
                 Console.WriteLine("No sync users configured.");
                 return 0;
             }
-            Console.WriteLine($"{"STAFF",-12} {"MAILBOX",-40} {"STATE",-9} CAL CON TASK MAIL");
+            Console.WriteLine($"{"STAFF",-12} {"MAILBOX",-40} {"STATE",-9} CAL CON TASK MAIL DIRECTION");
             foreach (var u in users)
             {
                 Console.WriteLine($"{u.StaffCode,-12} {u.Mailbox,-40} {(u.Enabled ? "enabled" : "disabled"),-9} " +
-                                  $"{Flag(u.Calendar)}   {Flag(u.Contacts)}   {Flag(u.Tasks)}    {Flag(u.EmailJournal)}");
+                                  $"{Flag(u.Calendar)}   {Flag(u.Contacts)}   {Flag(u.Tasks)}    {Flag(u.EmailJournal)}    " +
+                                  DirectionLabel(u.Direction));
             }
             return 0;
         }
@@ -124,7 +125,7 @@ static int RunUsers(string[] args, IStateStore state)
         {
             if (args.Length < 3)
             {
-                Console.Error.WriteLine("Usage: tmsync users add <staffCode> <mailbox> [--no-calendar] [--no-contacts] [--no-tasks] [--email-journal]");
+                Console.Error.WriteLine("Usage: tmsync users add <staffCode> <mailbox> [--no-calendar] [--no-contacts] [--no-tasks] [--email-journal] [--direction twoway|to-m365|to-tm]");
                 return 1;
             }
             var user = new SyncUser(
@@ -133,9 +134,10 @@ static int RunUsers(string[] args, IStateStore state)
                 Calendar: !args.Contains("--no-calendar"),
                 Contacts: !args.Contains("--no-contacts"),
                 Tasks: !args.Contains("--no-tasks"),
-                EmailJournal: args.Contains("--email-journal"));
+                EmailJournal: args.Contains("--email-journal"),
+                Direction: ParseDirection(GetOption(args, "--direction")));
             state.AddOrUpdateUser(user);
-            Console.WriteLine($"User '{user.StaffCode}' mapped to mailbox '{user.Mailbox}'.");
+            Console.WriteLine($"User '{user.StaffCode}' mapped to mailbox '{user.Mailbox}' ({DirectionLabel(user.Direction)}).");
             return 0;
         }
 
@@ -184,6 +186,23 @@ static int RunUsers(string[] args, IStateStore state)
 
 static string Flag(bool value) => value ? "Y" : "-";
 
+static SyncDirection? ParseDirection(string? value) => value?.ToLowerInvariant() switch
+{
+    null => null,
+    "twoway" or "two-way" or "both" => SyncDirection.TwoWay,
+    "to-m365" or "tm-to-m365" or "to365" => SyncDirection.TimeMattersToM365,
+    "to-tm" or "m365-to-tm" or "totm" => SyncDirection.M365ToTimeMatters,
+    var d => throw new ArgumentException($"Unknown direction '{d}'. Use twoway, to-m365 or to-tm.")
+};
+
+static string DirectionLabel(SyncDirection? direction) => direction switch
+{
+    SyncDirection.TwoWay => "two-way",
+    SyncDirection.TimeMattersToM365 => "one-way TM->M365",
+    SyncDirection.M365ToTimeMatters => "one-way M365->TM",
+    _ => "default"
+};
+
 static string? GetOption(string[] args, string name)
 {
     for (var i = 0; i < args.Length - 1; i++)
@@ -200,6 +219,7 @@ static void PrintUsage()
         Usage:
           tmsync users list
           tmsync users add <staffCode> <mailbox> [--no-calendar] [--no-contacts] [--no-tasks] [--email-journal]
+                                                 [--direction twoway|to-m365|to-tm]
           tmsync users remove <staffCode> [--purge]
           tmsync users enable <staffCode>
           tmsync users disable <staffCode>

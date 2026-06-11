@@ -22,6 +22,11 @@ public sealed class SyncEngine<T> where T : class
 
     private string ModuleKey => _module.ToString();
 
+    // One-way modes: when a side is not allowed to receive changes, the other side's
+    // edits are ignored (they may be overwritten the next time the source record changes).
+    private bool PushToGraph => _options.Direction != SyncDirection.M365ToTimeMatters;
+    private bool PushToTm => _options.Direction != SyncDirection.TimeMattersToM365;
+
     public SyncEngine(
         SyncModule module,
         ITmModuleStore<T> tm,
@@ -44,6 +49,9 @@ public sealed class SyncEngine<T> where T : class
     {
         var stats = new SyncStats();
         var state = _state.GetModuleState(ModuleKey, user.StaffCode);
+
+        var pushToGraph = PushToGraph;
+        var pushToTm = PushToTm;
 
         var tmChanges = await _tm.GetChangedSinceAsync(user.StaffCode, state.TmWatermarkUtc, ct);
 
@@ -118,6 +126,7 @@ public sealed class SyncEngine<T> where T : class
         // Creations
         foreach (var g in graphCreates)
         {
+            if (!pushToTm) continue;
             ct.ThrowIfCancellationRequested();
             try
             {
@@ -134,6 +143,7 @@ public sealed class SyncEngine<T> where T : class
 
         foreach (var t in tmCreates)
         {
+            if (!pushToGraph) continue;
             ct.ThrowIfCancellationRequested();
             try
             {
@@ -151,6 +161,7 @@ public sealed class SyncEngine<T> where T : class
         // Updates originating in Time Matters (resolving conflicts when both sides changed).
         foreach (var (t, link) in tmUpdates)
         {
+            if (!pushToGraph) continue; // M365 is the source; the graphUpdates pass below handles any M365 edit
             ct.ThrowIfCancellationRequested();
             try
             {
@@ -158,7 +169,7 @@ public sealed class SyncEngine<T> where T : class
                 {
                     graphUpdates.Remove(t.TmId);
                     stats.Conflicts++;
-                    if (TimeMattersWinsConflict(t.LastModifiedUtc, g.LastModifiedUtc))
+                    if (!pushToTm || TimeMattersWinsConflict(t.LastModifiedUtc, g.LastModifiedUtc))
                     {
                         await _graph.UpdateAsync(user.Mailbox, link.GraphId, t.Item!, ct);
                         _state.UpsertLink(link with { ContentHash = ContentHasher.Hash(t.Item!) });
@@ -188,6 +199,7 @@ public sealed class SyncEngine<T> where T : class
         // Remaining updates originating in Microsoft 365.
         foreach (var (tmId, g) in graphUpdates)
         {
+            if (!pushToTm) continue;
             ct.ThrowIfCancellationRequested();
             try
             {
@@ -210,7 +222,7 @@ public sealed class SyncEngine<T> where T : class
             ct.ThrowIfCancellationRequested();
             try
             {
-                if (_options.PropagateDeletes)
+                if (_options.PropagateDeletes && pushToTm)
                 {
                     await _tm.DeleteAsync(link.TmId, ct);
                     stats.DeletedInTm++;
@@ -229,7 +241,7 @@ public sealed class SyncEngine<T> where T : class
             ct.ThrowIfCancellationRequested();
             try
             {
-                if (_options.PropagateDeletes)
+                if (_options.PropagateDeletes && pushToGraph)
                 {
                     await _graph.DeleteAsync(user.Mailbox, link.GraphId, ct);
                     stats.DeletedInGraph++;
@@ -281,8 +293,9 @@ public sealed class SyncEngine<T> where T : class
             {
                 if (tmHash != graphHash)
                 {
-                    // Same natural key but different content: converge using the conflict policy.
-                    if (TimeMattersWinsConflict(t.LastModifiedUtc, g.LastModifiedUtc))
+                    // Same natural key but different content: converge using the sync
+                    // direction (the source side wins one-way) or the conflict policy.
+                    if (!PushToTm || (PushToGraph && TimeMattersWinsConflict(t.LastModifiedUtc, g.LastModifiedUtc)))
                     {
                         _graph.UpdateAsync(user.Mailbox, g.GraphId, t.Item!, CancellationToken.None).GetAwaiter().GetResult();
                         stats.UpdatedInGraph++;

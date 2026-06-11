@@ -10,6 +10,10 @@ public sealed class TmSyncOptions
     public string StateDatabasePath { get; set; } = "tmsync-state.db";
     public int IntervalMinutes { get; set; } = 5;
     public ConflictPolicy ConflictPolicy { get; set; } = ConflictPolicy.NewestWins;
+
+    /// <summary>Default sync direction; can be overridden per user via the CLI.</summary>
+    public SyncDirection Direction { get; set; } = SyncDirection.TwoWay;
+
     public bool PropagateDeletes { get; set; } = true;
     public ModuleToggles Modules { get; set; } = new();
     public CalendarWindow Calendar { get; set; } = new();

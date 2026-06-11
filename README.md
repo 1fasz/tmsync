@@ -17,8 +17,12 @@ SQL Server database.
 | Email journaling | one-way (O365 → TM) | Inbox + Sent Items copied into Time Matters |
 
 Every module can be switched on/off globally (`appsettings.json`) and per user
-(CLI). Conflicts are resolved by policy (`NewestWins` by default; `TimeMattersWins`
-and `Microsoft365Wins` are also available). Delete propagation can be disabled.
+(CLI). The two-way modules can also run **one-way** — globally via
+`Sync:Direction` (`TwoWay`, `TimeMattersToM365`, `M365ToTimeMatters`) or per user
+via `--direction`. In one-way mode the non-source side's edits are ignored and may
+be overwritten the next time the source record changes. Conflicts in two-way mode
+are resolved by policy (`NewestWins` by default; `TimeMattersWins` and
+`Microsoft365Wins` are also available). Delete propagation can be disabled.
 
 On the very first run, items that already exist on **both** sides (left behind by
 the old Exchange sync) are matched by subject/start-time (events), email/name
@@ -84,6 +88,7 @@ Edit `appsettings.json` (deployed next to the service executable):
     "StateDatabasePath": "C:\\ProgramData\\TmSync\\tmsync-state.db",
     "IntervalMinutes": 5,
     "ConflictPolicy": "NewestWins",       // NewestWins | TimeMattersWins | Microsoft365Wins
+    "Direction": "TwoWay",                // TwoWay | TimeMattersToM365 | M365ToTimeMatters
     "PropagateDeletes": true,
     "Modules": { "Calendar": true, "Contacts": true, "Tasks": true, "EmailJournal": false },
     "Calendar": { "PastDays": 30, "FutureDays": 365 }   // rolling calendar sync window
@@ -108,6 +113,8 @@ Manage users and sync from the CLI (uses the same `appsettings.json`):
 ```text
 tmsync users add JDOE jdoe@yourfirm.com            # add a user (all modules per global config)
 tmsync users add MSMITH msmith@yourfirm.com --no-contacts --email-journal
+tmsync users add BJONES bjones@yourfirm.com --direction to-m365   # one-way TM -> Office 365
+                                                                  # (twoway | to-m365 | to-tm)
 tmsync users remove JDOE                           # stop syncing (records stay put)
 tmsync users disable JDOE                          # pause without removing
 tmsync users list

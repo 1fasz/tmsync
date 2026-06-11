@@ -60,15 +60,15 @@ public sealed class SyncRunner
             return;
         }
 
-        var engineOptions = new SyncEngineOptions
-        {
-            ConflictPolicy = _options.ConflictPolicy,
-            PropagateDeletes = _options.PropagateDeletes
-        };
-
         foreach (var user in userList)
         {
             ct.ThrowIfCancellationRequested();
+            var engineOptions = new SyncEngineOptions
+            {
+                ConflictPolicy = _options.ConflictPolicy,
+                PropagateDeletes = _options.PropagateDeletes,
+                Direction = user.Direction ?? _options.Direction
+            };
             try
             {
                 if (ShouldRun(SyncModule.Calendar, onlyModule, _options.Modules.Calendar, user.Calendar))

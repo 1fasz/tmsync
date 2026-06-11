@@ -38,7 +38,8 @@ public sealed class StateStore : IStateStore
                 Contacts     INTEGER NOT NULL DEFAULT 1,
                 Tasks        INTEGER NOT NULL DEFAULT 1,
                 EmailJournal INTEGER NOT NULL DEFAULT 0,
-                AddedUtc     TEXT NOT NULL
+                AddedUtc     TEXT NOT NULL,
+                Direction    TEXT NULL
             );
             CREATE TABLE IF NOT EXISTS Links (
                 ModuleKey   TEXT NOT NULL,
@@ -66,6 +67,16 @@ public sealed class StateStore : IStateStore
             );
             """;
         cmd.ExecuteNonQuery();
+
+        // Migration for state databases created before per-user sync direction existed.
+        using var checkCmd = conn.CreateCommand();
+        checkCmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Users') WHERE name = 'Direction'";
+        if (Convert.ToInt64(checkCmd.ExecuteScalar()) == 0)
+        {
+            using var alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE Users ADD COLUMN Direction TEXT NULL";
+            alter.ExecuteNonQuery();
+        }
     }
 
     private static string FormatDate(DateTime utc) => utc.ToUniversalTime().ToString(DateFormat);
@@ -81,31 +92,31 @@ public sealed class StateStore : IStateStore
     {
         using var conn = Open();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT StaffCode, Mailbox, Enabled, Calendar, Contacts, Tasks, EmailJournal FROM Users ORDER BY StaffCode";
+        cmd.CommandText = "SELECT StaffCode, Mailbox, Enabled, Calendar, Contacts, Tasks, EmailJournal, Direction FROM Users ORDER BY StaffCode";
         using var reader = cmd.ExecuteReader();
         var users = new List<SyncUser>();
         while (reader.Read())
         {
-            users.Add(new SyncUser(
-                reader.GetString(0), reader.GetString(1),
-                reader.GetInt64(2) != 0, reader.GetInt64(3) != 0, reader.GetInt64(4) != 0,
-                reader.GetInt64(5) != 0, reader.GetInt64(6) != 0));
+            users.Add(ReadUser(reader));
         }
         return users;
     }
+
+    private static SyncUser ReadUser(SqliteDataReader reader) => new(
+        reader.GetString(0), reader.GetString(1),
+        reader.GetInt64(2) != 0, reader.GetInt64(3) != 0, reader.GetInt64(4) != 0,
+        reader.GetInt64(5) != 0, reader.GetInt64(6) != 0,
+        reader.IsDBNull(7) ? null : Enum.Parse<SyncDirection>(reader.GetString(7)));
 
     public SyncUser? GetUser(string staffCode)
     {
         using var conn = Open();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT StaffCode, Mailbox, Enabled, Calendar, Contacts, Tasks, EmailJournal FROM Users WHERE StaffCode = @s COLLATE NOCASE";
+        cmd.CommandText = "SELECT StaffCode, Mailbox, Enabled, Calendar, Contacts, Tasks, EmailJournal, Direction FROM Users WHERE StaffCode = @s COLLATE NOCASE";
         cmd.Parameters.AddWithValue("@s", staffCode);
         using var reader = cmd.ExecuteReader();
         if (!reader.Read()) return null;
-        return new SyncUser(
-            reader.GetString(0), reader.GetString(1),
-            reader.GetInt64(2) != 0, reader.GetInt64(3) != 0, reader.GetInt64(4) != 0,
-            reader.GetInt64(5) != 0, reader.GetInt64(6) != 0);
+        return ReadUser(reader);
     }
 
     public void AddOrUpdateUser(SyncUser user)
@@ -113,11 +124,12 @@ public sealed class StateStore : IStateStore
         using var conn = Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO Users (StaffCode, Mailbox, Enabled, Calendar, Contacts, Tasks, EmailJournal, AddedUtc)
-            VALUES (@staff, @mailbox, @enabled, @cal, @con, @tasks, @mail, @added)
+            INSERT INTO Users (StaffCode, Mailbox, Enabled, Calendar, Contacts, Tasks, EmailJournal, AddedUtc, Direction)
+            VALUES (@staff, @mailbox, @enabled, @cal, @con, @tasks, @mail, @added, @dir)
             ON CONFLICT(StaffCode) DO UPDATE SET
                 Mailbox = excluded.Mailbox, Enabled = excluded.Enabled, Calendar = excluded.Calendar,
-                Contacts = excluded.Contacts, Tasks = excluded.Tasks, EmailJournal = excluded.EmailJournal
+                Contacts = excluded.Contacts, Tasks = excluded.Tasks, EmailJournal = excluded.EmailJournal,
+                Direction = excluded.Direction
             """;
         cmd.Parameters.AddWithValue("@staff", user.StaffCode);
         cmd.Parameters.AddWithValue("@mailbox", user.Mailbox);
@@ -127,6 +139,7 @@ public sealed class StateStore : IStateStore
         cmd.Parameters.AddWithValue("@tasks", user.Tasks ? 1 : 0);
         cmd.Parameters.AddWithValue("@mail", user.EmailJournal ? 1 : 0);
         cmd.Parameters.AddWithValue("@added", FormatDate(DateTime.UtcNow));
+        cmd.Parameters.AddWithValue("@dir", (object?)user.Direction?.ToString() ?? DBNull.Value);
         cmd.ExecuteNonQuery();
     }
 
