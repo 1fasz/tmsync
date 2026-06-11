@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3EC6EE53-0DB1-4692-8D0B-C5155F0FA367}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmSync.Core", "src\TmSync.Core\TmSync.Core.csproj", "{442D098A-79B2-4337-B0AF-4EE3082D7C9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmSync.TimeMatters", "src\TmSync.TimeMatters\TmSync.TimeMatters.csproj", "{0F1696AC-BEEC-4230-946C-058BD7B4D5FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmSync.Graph", "src\TmSync.Graph\TmSync.Graph.csproj", "{2A05DA64-1C5F-4DE2-BE69-35D738D44062}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmSync.Service", "src\TmSync.Service\TmSync.Service.csproj", "{2026415C-835E-4C81-A00B-83348F3B95EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmSync.Cli", "src\TmSync.Cli\TmSync.Cli.csproj", "{2CC6A9DE-4AE9-4555-8AE6-D56694E7BCD5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7CB96ACA-198D-41C9-B221-BBBCD62698E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmSync.Core.Tests", "tests\TmSync.Core.Tests\TmSync.Core.Tests.csproj", "{5DC33201-9AE8-424B-8A79-E7A113848948}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{442D098A-79B2-4337-B0AF-4EE3082D7C9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{442D098A-79B2-4337-B0AF-4EE3082D7C9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{442D098A-79B2-4337-B0AF-4EE3082D7C9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{442D098A-79B2-4337-B0AF-4EE3082D7C9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F1696AC-BEEC-4230-946C-058BD7B4D5FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F1696AC-BEEC-4230-946C-058BD7B4D5FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F1696AC-BEEC-4230-946C-058BD7B4D5FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F1696AC-BEEC-4230-946C-058BD7B4D5FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A05DA64-1C5F-4DE2-BE69-35D738D44062}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A05DA64-1C5F-4DE2-BE69-35D738D44062}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A05DA64-1C5F-4DE2-BE69-35D738D44062}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A05DA64-1C5F-4DE2-BE69-35D738D44062}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2026415C-835E-4C81-A00B-83348F3B95EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2026415C-835E-4C81-A00B-83348F3B95EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2026415C-835E-4C81-A00B-83348F3B95EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2026415C-835E-4C81-A00B-83348F3B95EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CC6A9DE-4AE9-4555-8AE6-D56694E7BCD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CC6A9DE-4AE9-4555-8AE6-D56694E7BCD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CC6A9DE-4AE9-4555-8AE6-D56694E7BCD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CC6A9DE-4AE9-4555-8AE6-D56694E7BCD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DC33201-9AE8-424B-8A79-E7A113848948}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DC33201-9AE8-424B-8A79-E7A113848948}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DC33201-9AE8-424B-8A79-E7A113848948}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DC33201-9AE8-424B-8A79-E7A113848948}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{442D098A-79B2-4337-B0AF-4EE3082D7C9A} = {3EC6EE53-0DB1-4692-8D0B-C5155F0FA367}
+		{0F1696AC-BEEC-4230-946C-058BD7B4D5FC} = {3EC6EE53-0DB1-4692-8D0B-C5155F0FA367}
+		{2A05DA64-1C5F-4DE2-BE69-35D738D44062} = {3EC6EE53-0DB1-4692-8D0B-C5155F0FA367}
+		{2026415C-835E-4C81-A00B-83348F3B95EF} = {3EC6EE53-0DB1-4692-8D0B-C5155F0FA367}
+		{2CC6A9DE-4AE9-4555-8AE6-D56694E7BCD5} = {3EC6EE53-0DB1-4692-8D0B-C5155F0FA367}
+		{5DC33201-9AE8-424B-8A79-E7A113848948} = {7CB96ACA-198D-41C9-B221-BBBCD62698E5}
+	EndGlobalSection
+EndGlobal
