@@ -1,0 +1,191 @@
+<Window x:Class="TmSync.Manager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TmSync Manager - Time Matters / Office 365 Sync"
+        Height="640" Width="980" MinHeight="500" MinWidth="820"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusText" Text="Ready" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock x:Name="ConfigPathText" Foreground="Gray" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <TabControl x:Name="Tabs" Margin="8">
+
+            <!-- ======================= USERS ======================= -->
+            <TabItem Header="Users">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="AddUserButton" Content="Add User..." Click="AddUser_Click" />
+                        <Button x:Name="EditUserButton" Content="Edit..." Click="EditUser_Click" />
+                        <Button x:Name="RemoveUserButton" Content="Remove" Click="RemoveUser_Click" />
+                        <Button x:Name="ToggleUserButton" Content="Enable / Disable" Click="ToggleUser_Click" />
+                        <Button Content="Refresh" Click="RefreshUsers_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="UsersGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                              SelectionMode="Single" CanUserAddRows="False"
+                              MouseDoubleClick="UsersGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Staff Code" Binding="{Binding StaffCode}" Width="110" />
+                            <DataGridTextColumn Header="Office 365 Mailbox" Binding="{Binding Mailbox}" Width="240" />
+                            <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="70" />
+                            <DataGridCheckBoxColumn Header="Calendar" Binding="{Binding Calendar}" Width="75" />
+                            <DataGridCheckBoxColumn Header="Contacts" Binding="{Binding Contacts}" Width="75" />
+                            <DataGridCheckBoxColumn Header="Tasks" Binding="{Binding Tasks}" Width="60" />
+                            <DataGridCheckBoxColumn Header="Email Journal" Binding="{Binding EmailJournal}" Width="100" />
+                            <DataGridTextColumn Header="Direction" Binding="{Binding DirectionLabel}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ======================= SETTINGS ======================= -->
+            <TabItem Header="Settings">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="14" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Time Matters database" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="SQL connection string" />
+                            <TextBox x:Name="SqlConnBox" Grid.Column="1" />
+                            <Button Grid.Column="2" Content="Test" Margin="8,0,0,0" Click="TestSql_Click" />
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Microsoft 365 (Entra ID app registration)" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition /><RowDefinition /><RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Tenant ID" />
+                            <TextBox x:Name="TenantBox" Grid.Column="1" Margin="0,0,0,6" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Grid.Row="1" Text="Client ID" />
+                            <TextBox x:Name="ClientIdBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Grid.Row="2" Text="Client secret" />
+                            <PasswordBox x:Name="SecretBox" Grid.Row="2" Grid.Column="1" Padding="4,3" VerticalContentAlignment="Center" />
+                            <Button Grid.Row="2" Grid.Column="2" Content="Test" Margin="8,0,0,0" Click="TestGraph_Click" />
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Sync options" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="280" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Sync every (minutes)" />
+                            <TextBox x:Name="IntervalBox" Grid.Column="1" Width="80" HorizontalAlignment="Left" Margin="0,0,0,6" />
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Grid.Row="1" Text="Default direction" />
+                            <ComboBox x:Name="DirectionCombo" Grid.Row="1" Grid.Column="1" Width="280" HorizontalAlignment="Left" Margin="0,0,0,6">
+                                <ComboBoxItem Content="Two-way (changes flow both directions)" Tag="TwoWay" />
+                                <ComboBoxItem Content="One-way: Time Matters to Office 365" Tag="TimeMattersToM365" />
+                                <ComboBoxItem Content="One-way: Office 365 to Time Matters" Tag="M365ToTimeMatters" />
+                            </ComboBox>
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Grid.Row="2" Text="Conflict winner" />
+                            <ComboBox x:Name="ConflictCombo" Grid.Row="2" Grid.Column="1" Width="280" HorizontalAlignment="Left" Margin="0,0,0,6">
+                                <ComboBoxItem Content="Most recent change wins" Tag="NewestWins" />
+                                <ComboBoxItem Content="Time Matters always wins" Tag="TimeMattersWins" />
+                                <ComboBoxItem Content="Office 365 always wins" Tag="Microsoft365Wins" />
+                            </ComboBox>
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Grid.Row="3" Text="Propagate deletions" />
+                            <CheckBox x:Name="DeletesCheck" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,0,6" />
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Grid.Row="4" Text="Calendar window (days)" />
+                            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
+                                <TextBlock Text="past " VerticalAlignment="Center" />
+                                <TextBox x:Name="PastDaysBox" Width="55" />
+                                <TextBlock Text="  future " VerticalAlignment="Center" />
+                                <TextBox x:Name="FutureDaysBox" Width="55" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Modules enabled globally" />
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox x:Name="ModCalendarCheck" Content="Calendar / Events" Margin="0,0,18,0" />
+                            <CheckBox x:Name="ModContactsCheck" Content="Contacts" Margin="0,0,18,0" />
+                            <CheckBox x:Name="ModTasksCheck" Content="Tasks / ToDos" Margin="0,0,18,0" />
+                            <CheckBox x:Name="ModEmailCheck" Content="Email journaling" />
+                        </StackPanel>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Storage" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Sync state database" />
+                            <TextBox x:Name="StateDbBox" Grid.Column="1" />
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,18,0,10">
+                            <Button Content="Save Settings" FontWeight="SemiBold" Click="SaveSettings_Click" />
+                            <Button Content="Reload" Click="ReloadSettings_Click" />
+                            <Button Content="Open Config File..." Click="BrowseConfig_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ======================= STATUS ======================= -->
+            <TabItem Header="Status">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="Refresh" Click="RefreshStatus_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="StatusGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Staff Code" Binding="{Binding StaffCode}" Width="110" />
+                            <DataGridTextColumn Header="Module" Binding="{Binding Module}" Width="160" />
+                            <DataGridTextColumn Header="Last Run (UTC)" Binding="{Binding LastRun}" Width="180" />
+                            <DataGridTextColumn Header="Incremental" Binding="{Binding Incremental}" Width="110" />
+                            <DataGridTextColumn Header="TM Watermark (UTC)" Binding="{Binding Watermark}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ======================= RUN SYNC ======================= -->
+            <TabItem Header="Run Sync">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="User:" Style="{StaticResource FieldLabel}" />
+                        <ComboBox x:Name="SyncUserCombo" Width="180" Margin="0,0,14,0" />
+                        <TextBlock Text="Module:" Style="{StaticResource FieldLabel}" />
+                        <ComboBox x:Name="SyncModuleCombo" Width="160" Margin="0,0,14,0">
+                            <ComboBoxItem Content="All modules" IsSelected="True" />
+                            <ComboBoxItem Content="Calendar" />
+                            <ComboBoxItem Content="Contacts" />
+                            <ComboBoxItem Content="Tasks" />
+                            <ComboBoxItem Content="Email journal" />
+                        </ComboBox>
+                        <Button x:Name="RunSyncButton" Content="Run Sync Now" FontWeight="SemiBold" Click="RunSync_Click" />
+                        <Button Content="Clear Log" Click="ClearLog_Click" />
+                    </StackPanel>
+                    <TextBox x:Name="LogBox" IsReadOnly="True" FontFamily="Consolas" FontSize="12"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             TextWrapping="NoWrap" AcceptsReturn="True" Background="#1E1E1E" Foreground="#DCDCDC" />
+                </DockPanel>
+            </TabItem>
+
+        </TabControl>
+    </DockPanel>
+</Window>

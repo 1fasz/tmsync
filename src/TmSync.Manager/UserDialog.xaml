@@ -1,0 +1,51 @@
+<Window x:Class="TmSync.Manager.UserDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Sync User" Height="430" Width="480" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="Time Matters staff code" Style="{StaticResource FieldLabel}" />
+        <TextBox x:Name="StaffBox" Grid.Column="1" Margin="0,0,0,8" MaxLength="20" CharacterCasing="Upper" />
+
+        <TextBlock Grid.Row="1" Text="Office 365 mailbox" Style="{StaticResource FieldLabel}" />
+        <TextBox x:Name="MailboxBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8" />
+
+        <TextBlock Grid.Row="2" Text="Sync direction" Style="{StaticResource FieldLabel}" />
+        <ComboBox x:Name="DirectionCombo" Grid.Row="2" Grid.Column="1" Margin="0,0,0,8">
+            <ComboBoxItem Content="Default (use global setting)" IsSelected="True" />
+            <ComboBoxItem Content="Two-way (changes flow both directions)" />
+            <ComboBoxItem Content="One-way: Time Matters to Office 365" />
+            <ComboBoxItem Content="One-way: Office 365 to Time Matters" />
+        </ComboBox>
+
+        <TextBlock Grid.Row="3" Text="Modules to sync" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,4,10,0" />
+        <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,2,0,8">
+            <CheckBox x:Name="CalendarCheck" Content="Calendar / Events" IsChecked="True" Margin="0,2" />
+            <CheckBox x:Name="ContactsCheck" Content="Contacts" IsChecked="True" Margin="0,2" />
+            <CheckBox x:Name="TasksCheck" Content="Tasks / ToDos" IsChecked="True" Margin="0,2" />
+            <CheckBox x:Name="EmailCheck" Content="Email journaling (Office 365 mail copied into Time Matters)" Margin="0,2" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="4" Text="Sync enabled" Style="{StaticResource FieldLabel}" />
+        <CheckBox x:Name="EnabledCheck" Grid.Row="4" Grid.Column="1" IsChecked="True" VerticalAlignment="Center" />
+
+        <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="OK" IsDefault="True" Click="Ok_Click" />
+            <Button Content="Cancel" IsCancel="True" Margin="0" />
+        </StackPanel>
+    </Grid>
+</Window>
