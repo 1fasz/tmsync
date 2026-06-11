@@ -65,6 +65,29 @@ static async Task<int> RunAsync(string[] args, ServiceProvider provider)
             return 0;
         }
 
+        case "logs":
+        {
+            var minRank = GetOption(args, "--level")?.ToLowerInvariant() switch
+            {
+                null => 0,
+                "warning" => 3,
+                "error" => 4,
+                var l => throw new ArgumentException($"Unknown level '{l}'. Use warning or error.")
+            };
+            var limit = int.TryParse(GetOption(args, "--limit"), out var n) ? n : 50;
+            var entries = state.QueryLog(limit, minRank, GetOption(args, "--search"));
+            if (entries.Count == 0)
+            {
+                Console.WriteLine("No log entries match.");
+                return 0;
+            }
+            foreach (var entry in entries.Reverse())
+            {
+                Console.WriteLine($"{entry.TimestampUtc.ToLocalTime():yyyy-MM-dd HH:mm:ss} {entry.Level,-11} {entry.Source}: {entry.Message}");
+            }
+            return 0;
+        }
+
         case "status":
         {
             var users = state.ListUsers();
@@ -225,6 +248,7 @@ static void PrintUsage()
           tmsync users disable <staffCode>
           tmsync sync [--user <staffCode>] [--module calendar|contacts|tasks|email]
           tmsync status
+          tmsync logs [--level warning|error] [--limit <n>] [--search <text>]
 
         Configuration is read from appsettings.json next to the executable,
         or the file pointed to by the TMSYNC_CONFIG environment variable.

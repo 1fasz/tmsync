@@ -15,6 +15,9 @@ public sealed record SyncLink(string ModuleKey, string StaffCode, string TmId, s
 /// <summary>Persisted per-user, per-module incremental sync state.</summary>
 public sealed record ModuleState(string? DeltaToken, DateTime? TmWatermarkUtc, DateTime? LastRunUtc);
 
+/// <summary>A persisted sync log entry.</summary>
+public sealed record LogEntry(long Id, DateTime TimestampUtc, string Level, string Source, string Message);
+
 /// <summary>Thrown by Graph stores when a stored delta token is no longer valid and a full resync is required.</summary>
 public sealed class DeltaTokenExpiredException : Exception
 {

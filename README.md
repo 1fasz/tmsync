@@ -35,9 +35,36 @@ src/TmSync.Core         Sync engine, conflict resolution, SQLite state store
 src/TmSync.TimeMatters  SQL Server access to the Time Matters database
 src/TmSync.Graph        Microsoft Graph (Office 365) access — delta queries, app-only auth
 src/TmSync.Service      Windows service host (background sync every N minutes)
-src/TmSync.Cli          Management CLI: add/remove users, run syncs, status
+src/TmSync.Manager      Desktop GUI (WPF): users, settings, status, on-demand syncs
+src/TmSync.Cli          Management CLI: the same administration from the command line
 sql/                    SQL contract template to adapt to your Time Matters version
 ```
+
+## TmSync Manager (GUI)
+
+`TmSync.Manager.exe` is a Windows desktop app that manages everything without
+touching the command line. It reads and writes the **same** `appsettings.json`
+and state database the service uses:
+
+- **Users** — add, edit, remove, enable/disable sync users in a dialog:
+  staff code → mailbox mapping, per-module checkboxes (calendar, contacts,
+  tasks, email journaling) and per-user sync direction.
+- **Settings** — SQL connection string, Entra ID tenant/client/secret (with
+  **Test** buttons that verify the SQL connection and Microsoft 365 sign-in),
+  sync interval, default direction, conflict winner, delete propagation,
+  global module toggles and the calendar window. Saving writes
+  `appsettings.json`; restart the TmSync service to pick up changes.
+- **Status** — last run and incremental-sync state per user and module.
+- **Run Sync** — trigger a sync pass on demand (optionally limited to one
+  user and/or one module) with live log output.
+- **Logs** — browse the persistent sync log: every sync pass (whether run by
+  the Windows service, the CLI or the GUI) is recorded in the shared state
+  database. Filter by level (warnings/errors), search the message text, and
+  purge old entries. Entries older than `Sync:LogRetentionDays` (default 30)
+  are purged automatically; the CLI equivalent is `tmsync logs`.
+
+On first start the Manager looks for `appsettings.json` next to its exe (or a
+`TMSYNC_CONFIG` environment variable) and otherwise asks you to pick/create one.
 
 ## Setup
 
@@ -90,6 +117,7 @@ Edit `appsettings.json` (deployed next to the service executable):
     "ConflictPolicy": "NewestWins",       // NewestWins | TimeMattersWins | Microsoft365Wins
     "Direction": "TwoWay",                // TwoWay | TimeMattersToM365 | M365ToTimeMatters
     "PropagateDeletes": true,
+    "LogRetentionDays": 30,               // sync log entries older than this are purged
     "Modules": { "Calendar": true, "Contacts": true, "Tasks": true, "EmailJournal": false },
     "Calendar": { "PastDays": 30, "FutureDays": 365 }   // rolling calendar sync window
   }
@@ -98,10 +126,15 @@ Edit `appsettings.json` (deployed next to the service executable):
 
 ### 4. Build, install the service, add users
 
+Ready-made `win-x64` binaries (service + GUI + CLI) are produced by the CI
+workflow on every push — download the `TmSync-win-x64` artifact from the
+repository's **Actions** tab. To build yourself on Windows:
+
 ```powershell
 # Build (requires .NET 8 SDK)
 dotnet publish src/TmSync.Service -c Release -r win-x64 --self-contained -o C:\TmSync
 dotnet publish src/TmSync.Cli     -c Release -r win-x64 --self-contained -o C:\TmSync
+dotnet publish src/TmSync.Manager -c Release -r win-x64 --self-contained -o C:\TmSync
 
 # Install as a Windows service
 sc.exe create TmSync binPath= "C:\TmSync\TmSync.Service.exe" start= auto obj= "DOMAIN\svc-tmsync" password= "..."
@@ -120,6 +153,7 @@ tmsync users disable JDOE                          # pause without removing
 tmsync users list
 tmsync sync --user JDOE --module calendar          # run one pass manually
 tmsync status                                      # last-run times per user/module
+tmsync logs --level error --limit 100              # browse the persistent sync log
 ```
 
 ## How it works
@@ -145,6 +179,10 @@ tmsync status                                      # last-run times per user/mod
 ## Development
 
 ```bash
-dotnet build TmSync.sln
+dotnet build TmSync.sln   # service, CLI, engine + tests (any OS)
 dotnet test TmSync.sln
+dotnet build src/TmSync.Manager   # WPF GUI — requires Windows (not part of the .sln)
 ```
+
+`TmSync.Manager` is intentionally not in `TmSync.sln` so the solution still
+builds on non-Windows machines; CI builds the GUI on a Windows runner.

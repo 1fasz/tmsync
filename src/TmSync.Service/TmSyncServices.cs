@@ -23,6 +23,7 @@ public static class TmSyncServices
         services.AddSingleton(tmOptions);
 
         services.AddSingleton<IStateStore>(_ => new StateStore(syncOptions.StateDatabasePath));
+        services.AddSingleton<Microsoft.Extensions.Logging.ILoggerProvider, StateStoreLoggerProvider>();
         services.AddSingleton(_ => new TmDb(tmOptions.ConnectionString));
         services.AddSingleton(_ => TmGraphClientFactory.Create(m365Options));
 

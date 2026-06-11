@@ -24,4 +24,9 @@ public interface IStateStore
     // Email journaling dedupe
     bool IsJournaled(string staffCode, string internetMessageId);
     void MarkJournaled(string staffCode, string internetMessageId);
+
+    // Sync log
+    void AddLogEntry(DateTime timestampUtc, string level, string source, string message);
+    IReadOnlyList<LogEntry> QueryLog(int limit, int minLevelRank = 0, string? search = null);
+    int PurgeLogsOlderThan(int days);
 }

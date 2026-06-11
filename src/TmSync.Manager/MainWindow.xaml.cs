@@ -59,6 +59,7 @@ public partial class MainWindow : Window
         LoadSettingsTab();
         RefreshUsers();
         RefreshStatus();
+        RefreshLogs();
         SetStatus("Configuration loaded.");
     }
 
@@ -329,6 +330,69 @@ public partial class MainWindow : Window
         SetStatus("Status refreshed.");
     }
 
+    // =================== Logs tab ===================
+
+    public sealed record LogRow(string Time, string Level, string Source, string Message);
+
+    private void RefreshLogs()
+    {
+        if (_state is null || LogsGrid is null) return;
+
+        var minRank = LogLevelCombo.SelectedIndex switch
+        {
+            1 => 3, // Warning and above
+            2 => 4, // Error and above
+            _ => 0
+        };
+        var limit = LogLimitCombo.SelectedIndex switch
+        {
+            1 => 1000,
+            2 => 5000,
+            _ => 200
+        };
+        var search = string.IsNullOrWhiteSpace(LogSearchBox.Text) ? null : LogSearchBox.Text.Trim();
+
+        var entries = State.QueryLog(limit, minRank, search);
+        LogsGrid.ItemsSource = entries
+            .Select(e => new LogRow(
+                e.TimestampUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                e.Level,
+                e.Source,
+                e.Message))
+            .ToList();
+        SetStatus($"{entries.Count} log entr{(entries.Count == 1 ? "y" : "ies")} shown.");
+    }
+
+    private void RefreshLogs_Click(object sender, RoutedEventArgs e) => RefreshLogs();
+
+    private void LogFilter_Changed(object sender, SelectionChangedEventArgs e) => RefreshLogs();
+
+    private void LogSearch_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) RefreshLogs();
+    }
+
+    private void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LogsTab is null || !ReferenceEquals(e.OriginalSource, Tabs)) return;
+        if (Tabs.SelectedItem == LogsTab) RefreshLogs();
+    }
+
+    private void PurgeLogs_Click(object sender, RoutedEventArgs e)
+    {
+        var retention = _config.GetValue(["Sync", "LogRetentionDays"], 30);
+        var answer = MessageBox.Show(
+            $"Delete all sync log entries older than {retention} days?\n\n" +
+            "(The retention period is the 'LogRetentionDays' value in the Sync section of the configuration; " +
+            "the service also purges automatically on this schedule.)",
+            "Purge sync log", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes) return;
+
+        var removed = State.PurgeLogsOlderThan(retention);
+        RefreshLogs();
+        SetStatus($"Purged {removed} old log entr{(removed == 1 ? "y" : "ies")}.");
+    }
+
     // =================== Run Sync tab ===================
 
     private void AppendLog(string line)
@@ -388,6 +452,7 @@ public partial class MainWindow : Window
             _syncRunning = false;
             RunSyncButton.IsEnabled = true;
             RefreshStatus();
+            RefreshLogs();
         }
     }
 }

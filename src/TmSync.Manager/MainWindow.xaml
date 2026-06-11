@@ -14,7 +14,7 @@
             </StatusBarItem>
         </StatusBar>
 
-        <TabControl x:Name="Tabs" Margin="8">
+        <TabControl x:Name="Tabs" Margin="8" SelectionChanged="Tabs_SelectionChanged">
 
             <!-- ======================= USERS ======================= -->
             <TabItem Header="Users">
@@ -183,6 +183,54 @@
                     <TextBox x:Name="LogBox" IsReadOnly="True" FontFamily="Consolas" FontSize="12"
                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                              TextWrapping="NoWrap" AcceptsReturn="True" Background="#1E1E1E" Foreground="#DCDCDC" />
+                </DockPanel>
+            </TabItem>
+
+            <!-- ======================= LOGS ======================= -->
+            <TabItem Header="Logs" x:Name="LogsTab">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Level:" Style="{StaticResource FieldLabel}" />
+                        <ComboBox x:Name="LogLevelCombo" Width="130" Margin="0,0,14,0" SelectionChanged="LogFilter_Changed">
+                            <ComboBoxItem Content="All" IsSelected="True" />
+                            <ComboBoxItem Content="Warnings + errors" />
+                            <ComboBoxItem Content="Errors only" />
+                        </ComboBox>
+                        <TextBlock Text="Search:" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="LogSearchBox" Width="200" Margin="0,0,14,0" KeyDown="LogSearch_KeyDown" />
+                        <TextBlock Text="Show:" Style="{StaticResource FieldLabel}" />
+                        <ComboBox x:Name="LogLimitCombo" Width="110" Margin="0,0,14,0" SelectionChanged="LogFilter_Changed">
+                            <ComboBoxItem Content="Last 200" IsSelected="True" />
+                            <ComboBoxItem Content="Last 1000" />
+                            <ComboBoxItem Content="Last 5000" />
+                        </ComboBox>
+                        <Button Content="Refresh" Click="RefreshLogs_Click" />
+                        <Button Content="Purge Old Entries..." Click="PurgeLogs_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="LogsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                              HeadersVisibility="Column">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Level}" Value="Error">
+                                        <Setter Property="Foreground" Value="#C42B1C" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Level}" Value="Critical">
+                                        <Setter Property="Foreground" Value="#C42B1C" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                        <Setter Property="Foreground" Value="#9D5D00" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Time (local)" Binding="{Binding Time}" Width="150" />
+                            <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="90" />
+                            <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="110" />
+                            <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </DockPanel>
             </TabItem>
 

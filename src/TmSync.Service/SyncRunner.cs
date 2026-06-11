@@ -53,6 +53,12 @@ public sealed class SyncRunner
         if (onlyStaffCode != null)
             users = users.Where(u => string.Equals(u.StaffCode, onlyStaffCode, StringComparison.OrdinalIgnoreCase));
 
+        if (_options.LogRetentionDays > 0)
+        {
+            try { _state.PurgeLogsOlderThan(_options.LogRetentionDays); }
+            catch (Exception ex) { _log.LogWarning(ex, "Failed purging old sync log entries"); }
+        }
+
         var userList = users.ToList();
         if (userList.Count == 0)
         {

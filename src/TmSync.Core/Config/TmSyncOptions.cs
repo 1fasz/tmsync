@@ -15,6 +15,9 @@ public sealed class TmSyncOptions
     public SyncDirection Direction { get; set; } = SyncDirection.TwoWay;
 
     public bool PropagateDeletes { get; set; } = true;
+
+    /// <summary>Sync log entries older than this many days are purged automatically.</summary>
+    public int LogRetentionDays { get; set; } = 30;
     public ModuleToggles Modules { get; set; } = new();
     public CalendarWindow Calendar { get; set; } = new();
 

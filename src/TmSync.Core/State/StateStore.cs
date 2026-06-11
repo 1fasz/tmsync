@@ -28,6 +28,14 @@ public sealed class StateStore : IStateStore
     private void EnsureCreated()
     {
         using var conn = Open();
+
+        // WAL lets the GUI read logs/status while the service is writing.
+        using (var pragma = conn.CreateCommand())
+        {
+            pragma.CommandText = "PRAGMA journal_mode=WAL";
+            pragma.ExecuteNonQuery();
+        }
+
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE IF NOT EXISTS Users (
@@ -65,6 +73,15 @@ public sealed class StateStore : IStateStore
                 JournaledUtc      TEXT NOT NULL,
                 PRIMARY KEY (StaffCode, InternetMessageId)
             );
+            CREATE TABLE IF NOT EXISTS SyncLog (
+                Id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                TimestampUtc TEXT NOT NULL,
+                Level        TEXT NOT NULL,
+                LevelRank    INTEGER NOT NULL,
+                Source       TEXT NOT NULL,
+                Message      TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS IX_SyncLog_Time ON SyncLog (TimestampUtc);
             """;
         cmd.ExecuteNonQuery();
 
@@ -282,5 +299,72 @@ public sealed class StateStore : IStateStore
         cmd.Parameters.AddWithValue("@id", internetMessageId);
         cmd.Parameters.AddWithValue("@u", FormatDate(DateTime.UtcNow));
         cmd.ExecuteNonQuery();
+    }
+
+    // ---- Sync log ----
+
+    private static int LevelRank(string level) => level switch
+    {
+        "Trace" => 0,
+        "Debug" => 1,
+        "Information" => 2,
+        "Warning" => 3,
+        "Error" => 4,
+        "Critical" => 5,
+        _ => 2
+    };
+
+    public void AddLogEntry(DateTime timestampUtc, string level, string source, string message)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO SyncLog (TimestampUtc, Level, LevelRank, Source, Message)
+            VALUES (@t, @l, @r, @s, @m)
+            """;
+        cmd.Parameters.AddWithValue("@t", FormatDate(timestampUtc));
+        cmd.Parameters.AddWithValue("@l", level);
+        cmd.Parameters.AddWithValue("@r", LevelRank(level));
+        cmd.Parameters.AddWithValue("@s", source);
+        cmd.Parameters.AddWithValue("@m", message);
+        cmd.ExecuteNonQuery();
+    }
+
+    public IReadOnlyList<LogEntry> QueryLog(int limit, int minLevelRank = 0, string? search = null)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, TimestampUtc, Level, Source, Message
+            FROM SyncLog
+            WHERE LevelRank >= @rank AND (@search IS NULL OR Message LIKE '%' || @search || '%')
+            ORDER BY Id DESC
+            LIMIT @limit
+            """;
+        cmd.Parameters.AddWithValue("@rank", minLevelRank);
+        cmd.Parameters.AddWithValue("@search", (object?)search ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@limit", limit);
+
+        var entries = new List<LogEntry>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            entries.Add(new LogEntry(
+                reader.GetInt64(0),
+                ParseDate(reader.GetString(1)) ?? DateTime.MinValue,
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetString(4)));
+        }
+        return entries;
+    }
+
+    public int PurgeLogsOlderThan(int days)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM SyncLog WHERE TimestampUtc < @cutoff";
+        cmd.Parameters.AddWithValue("@cutoff", FormatDate(DateTime.UtcNow.AddDays(-days)));
+        return cmd.ExecuteNonQuery();
     }
 }
